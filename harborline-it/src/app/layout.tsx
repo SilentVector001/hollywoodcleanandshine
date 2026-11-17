@@ -3,6 +3,7 @@ import { brand } from "@config/brand";
 import { DemoBanner } from "@/components/layout/DemoBanner";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { ChatWidgetMount } from "@/components/chat/ChatWidgetMount";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -69,6 +70,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {children}
         </main>
         <SiteFooter />
+        <ChatWidgetMount />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd).replace(/</g, "\\u003c") }}

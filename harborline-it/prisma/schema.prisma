@@ -29,6 +29,7 @@ model Lead {
 
   assessments     RiskAssessment[]
   contactRequests ContactRequest[]
+  chatSessions    ChatSession[]
 
   @@index([createdAt])
 }
@@ -51,14 +52,50 @@ model RiskAssessment {
   @@index([createdAt])
 }
 
-/// A message sent through the contact form.
+/// A request to talk: the contact form, or "book a call" in the chat.
 model ContactRequest {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  leadId    String
-  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  message   String
-  plan      String?
+  id            String   @id @default(uuid())
+  createdAt     DateTime @default(now())
+  leadId        String
+  lead          Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  /// "contact_form" | "chat"
+  channel       String   @default("contact_form")
+  message       String
+  plan          String?
+  preferredTime String?
 
   @@index([leadId])
+  @@index([createdAt])
+}
+
+/// One website chat conversation. Linked to a lead once we know who it is.
+model ChatSession {
+  id        String        @id @default(uuid())
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  leadId    String?
+  lead      Lead?         @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  /// "ai" (Claude) or "demo" (FAQ matching, no API key)
+  mode      String
+  /// Salted hash of the visitor's IP address, used only for rate limiting
+  ipHash    String
+  /// Page the conversation started on
+  startPath String?
+  messages  ChatMessage[]
+
+  @@index([leadId])
+  @@index([ipHash, createdAt])
+  @@index([createdAt])
+}
+
+model ChatMessage {
+  id        String      @id @default(uuid())
+  createdAt DateTime    @default(now())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  /// "user" | "assistant" | "event" (e.g. a call was booked; never sent to the AI)
+  role      String
+  content   String
+
+  @@index([sessionId, createdAt])
 }

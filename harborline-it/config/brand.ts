@@ -785,6 +785,40 @@ export const brand = {
     ] satisfies RiskQuestion[],
   },
 
+  // --------------------------------------------------------------- assistant
+  /**
+   * The chat assistant on every page. It answers ONLY from this config
+   * (company, services, pricing, FAQ, process, Risk Check), so keep it accurate.
+   * With ANTHROPIC_API_KEY set it uses Claude; without one it runs in free
+   * demo mode, matching questions to the FAQ.
+   */
+  assistant: {
+    enabled: true,
+    name: "Harbor Assistant",
+    launcherLabel: "Questions? Ask us",
+    subtitle: "Plans, HIPAA support, response times",
+    greeting:
+      "Hi there! I can answer questions about Harborline's IT services for medical and dental offices: plans, HIPAA support, response times and more. What can I help with?",
+    suggestions: [
+      "What do your plans cost?",
+      "Do you sign a BAA?",
+      "How fast do you respond?",
+      "What happens in a hurricane?",
+    ],
+    disclaimer: "Automated assistant. Please don't share patient information.",
+    bookingPrompt: "I'd be glad to set up a free 15-minute call with our team. Where should we reach you?",
+    /** {name} is replaced with the visitor's first name. */
+    bookingConfirmation:
+      "Thanks, {name}! Someone from our team will reach out within one business day to schedule your free call.",
+    fallbackAnswer:
+      "That's a great question for our team. I don't have that detail here, but we can cover it on a free 15-minute call. Would you like to book one?",
+    /** {phone} is replaced with the company phone number. */
+    errorAnswer:
+      "Sorry, I'm having trouble answering right now. You can call us at {phone} or book a free call below.",
+    /** Optional extra facts the assistant may use. Only add things that are true. */
+    extraFacts: [] as string[],
+  },
+
   // ----------------------------------------------------------------- cta band
   closingCta: {
     title: "Ready for IT you don't have to think about?",

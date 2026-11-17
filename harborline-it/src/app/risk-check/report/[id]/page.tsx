@@ -9,6 +9,7 @@ import { ScoreRing } from "@/components/risk-check/ScoreRing";
 import { StatusChip } from "@/components/risk-check/StatusChip";
 import { bandFor, itemStatus, parseStoredItems, topPriorities } from "@/lib/risk-check";
 import { PrintButton } from "./PrintButton";
+import { RememberLead } from "./RememberLead";
 
 export const metadata: Metadata = {
   title: "Your IT Risk Report",
@@ -46,6 +47,7 @@ async function Report({ params }: { params: Promise<{ id: string }> }) {
 
   return (
     <article>
+      <RememberLead id={assessment.leadId} />
       {/* Summary */}
       <header className="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-slate-200 sm:p-8 print:shadow-none">
         <div className="flex flex-wrap items-start justify-between gap-4">
