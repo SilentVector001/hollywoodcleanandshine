@@ -76,6 +76,13 @@ conversations and 60 messages per visitor per hour (visitor IPs are stored only 
 a polite fallback with the phone number if the AI is unavailable. Tune these in
 `src/lib/assistant/guard.ts`.
 
+## Shareable static preview
+
+`npm run build && npm run preview:build` writes `preview/dist/index.html`: one self-contained page
+that runs entirely in the browser (no server or database). It reuses the real components; the
+Risk Check and chat run in demo mode and nothing is saved. Handy for sending a quick look to
+someone before the site is deployed. The real site is unaffected.
+
 ## Demo rules
 
 - Harborline IT, its team, phone number (555-01xx) and testimonials are invented.

@@ -7,6 +7,24 @@ import type { AssistantMode, ContactHints } from "@/lib/assistant/types";
 const STORAGE_KEY = "hl_chat";
 const LEAD_KEY = "hl_lead";
 
+/** Browser storage can be missing or blocked (private mode, sandboxed frames): never let it break the chat. */
+const safeStorage = {
+  get(store: "local" | "session", key: string): string | null {
+    try {
+      return (store === "local" ? localStorage : sessionStorage).getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  set(store: "local" | "session", key: string, value: string) {
+    try {
+      (store === "local" ? localStorage : sessionStorage).setItem(key, value);
+    } catch {
+      /* ignore */
+    }
+  },
+};
+
 type Role = "user" | "assistant";
 interface UiMessage {
   id: number;
@@ -48,7 +66,7 @@ export function ChatWidget(props: ChatWidgetProps) {
   // Keep the conversation across page loads in this browser tab.
   useEffect(() => {
     if (!restored.current) return;
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ sessionId, messages, booked }));
+    safeStorage.set("session", STORAGE_KEY, JSON.stringify({ sessionId, messages, booked }));
   }, [sessionId, messages, booked]);
 
   // Scroll to the newest message. When the booking form opens, keep the
@@ -74,7 +92,7 @@ export function ChatWidget(props: ChatWidgetProps) {
     if (!restored.current) {
       restored.current = true;
       try {
-        const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? "null");
+        const saved = JSON.parse(safeStorage.get("session", STORAGE_KEY) ?? "null");
         if (saved && Array.isArray(saved.messages)) {
           setMessages(saved.messages);
           setSessionId(saved.sessionId ?? null);
@@ -106,7 +124,7 @@ export function ChatWidget(props: ChatWidgetProps) {
           sessionId,
           message,
           startPath: window.location.pathname,
-          leadRef: localStorage.getItem(LEAD_KEY) ?? undefined,
+          leadRef: safeStorage.get("local", LEAD_KEY) ?? undefined,
         }),
       });
       const data = await res.json();
@@ -207,7 +225,7 @@ export function ChatWidget(props: ChatWidgetProps) {
                   setBooked(true);
                   setBookingOpen(false);
                   if (newSessionId) setSessionId(newSessionId);
-                  if (leadId) localStorage.setItem(LEAD_KEY, leadId);
+                  if (leadId) safeStorage.set("local", LEAD_KEY, leadId);
                   if (confirmation) push("assistant", confirmation);
                 }}
               />
