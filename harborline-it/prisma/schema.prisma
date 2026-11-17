@@ -1,0 +1,101 @@
+// Database schema. Local dev uses SQLite; see README for switching to Postgres
+// (change `provider` below and the adapter in src/lib/db.ts).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+/// A person who contacted us, took the Risk Check, or (Phase 3) chatted.
+/// One row per email address; their activity hangs off it.
+model Lead {
+  id           String   @id @default(uuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  name         String
+  business     String
+  email        String   @unique
+  phone        String?
+  /// First touch: "risk_check" | "contact" | "chat"
+  source       String
+  /// Pipeline stage: "new" | "contacted" | "booked" | "won" | "lost"
+  status       String   @default("new")
+  practiceType String?
+  teamSize     String?
+
+  assessments     RiskAssessment[]
+  contactRequests ContactRequest[]
+  chatSessions    ChatSession[]
+
+  @@index([createdAt])
+}
+
+/// One completed IT Risk Check. `answers` is a self-contained snapshot
+/// (question text, chosen answer, points) so old reports stay readable even
+/// if the quiz in config/brand.ts changes later.
+model RiskAssessment {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  /// 0-100
+  score     Int
+  /// Band label from config, e.g. "At risk"
+  band      String
+  answers   Json
+
+  @@index([leadId])
+  @@index([createdAt])
+}
+
+/// A request to talk: the contact form, or "book a call" in the chat.
+model ContactRequest {
+  id            String   @id @default(uuid())
+  createdAt     DateTime @default(now())
+  leadId        String
+  lead          Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  /// "contact_form" | "chat"
+  channel       String   @default("contact_form")
+  message       String
+  plan          String?
+  preferredTime String?
+
+  @@index([leadId])
+  @@index([createdAt])
+}
+
+/// One website chat conversation. Linked to a lead once we know who it is.
+model ChatSession {
+  id        String        @id @default(uuid())
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  leadId    String?
+  lead      Lead?         @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  /// "ai" (Claude) or "demo" (FAQ matching, no API key)
+  mode      String
+  /// Salted hash of the visitor's IP address, used only for rate limiting
+  ipHash    String
+  /// Page the conversation started on
+  startPath String?
+  messages  ChatMessage[]
+
+  @@index([leadId])
+  @@index([ipHash, createdAt])
+  @@index([createdAt])
+}
+
+model ChatMessage {
+  id        String      @id @default(uuid())
+  createdAt DateTime    @default(now())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  /// "user" | "assistant" | "event" (e.g. a call was booked; never sent to the AI)
+  role      String
+  content   String
+
+  @@index([sessionId, createdAt])
+}

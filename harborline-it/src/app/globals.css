@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/*
+ * Brand colors are NOT defined here. They come from config/brand.ts and are
+ * injected as CSS variables on <html> in src/app/layout.tsx. These tokens map
+ * them to Tailwind utilities: bg-brand, text-brand-dark, bg-accent/20, etc.
+ */
+@theme inline {
+  --color-brand: var(--brand-primary);
+  --color-brand-dark: var(--brand-primary-dark);
+  --color-brand-light: var(--brand-primary-light);
+  --color-accent: var(--brand-accent);
+  --color-ink: #0f172a;
+  --color-muted: #475569;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    "Noto Sans", sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* keeps anchored sections clear of the sticky header */
+  scroll-padding-top: 5rem;
+}
+
+body {
+  background: #ffffff;
+  color: var(--color-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* FAQ accordion (native <details>, no JavaScript) */
+details > summary {
+  list-style: none;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
+details[open] .faq-chevron {
+  transform: rotate(180deg);
+}
