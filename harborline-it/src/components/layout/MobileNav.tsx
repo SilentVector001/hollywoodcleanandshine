@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
 import type { Link as NavLink } from "@config/brand";
 
 export function MobileNav({
@@ -14,19 +13,20 @@ export function MobileNav({
   phone: { display: string; href: string };
   cta: NavLink;
 }) {
-  const pathname = usePathname();
-  // The menu remembers which page it was opened on, so it closes itself
-  // automatically when the route changes.
-  const [openOn, setOpenOn] = useState<string | null>(null);
-  const open = openOn === pathname;
-  const setOpen = (value: boolean) => setOpenOn(value ? pathname : null);
+  const [open, setOpen] = useState(false);
 
-  // Close on Escape.
+  // Close on Escape and on browser back/forward. (Links in the menu close it
+  // themselves.) Not reading the URL keeps every page fully prerenderable.
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpenOn(null);
+    const close = () => setOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("popstate", close);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("popstate", close);
+    };
   }, [open]);
 
   return (

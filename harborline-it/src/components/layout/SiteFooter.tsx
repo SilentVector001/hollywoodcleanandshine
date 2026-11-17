@@ -6,7 +6,7 @@ import { Icon } from "@/components/Icon";
 export function SiteFooter() {
   const { company } = brand;
   return (
-    <footer className="bg-brand-dark text-white/80">
+    <footer className="bg-brand-dark text-white/80 print:hidden">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-4 lg:px-8">
         <div className="md:col-span-2">
           <Logo inverted />

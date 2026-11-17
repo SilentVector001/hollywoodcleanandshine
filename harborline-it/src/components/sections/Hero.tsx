@@ -22,7 +22,7 @@ export function Hero() {
           <p className="mt-5 max-w-xl text-lg text-pretty text-muted sm:text-xl">{hero.subheadline}</p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <ButtonLink href={brand.primaryCta.href}>{brand.primaryCta.label}</ButtonLink>
+            <ButtonLink href={hero.primaryCta.href}>{hero.primaryCta.label}</ButtonLink>
             <ButtonLink href={hero.secondaryCta.href} variant="outline">
               {hero.secondaryCta.label}
             </ButtonLink>

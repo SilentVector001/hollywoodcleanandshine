@@ -7,7 +7,7 @@ import { MobileNav } from "./MobileNav";
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/75">
+    <header className="sticky top-0 z-40 print:hidden border-b border-slate-200/80 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/75">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Logo />
 
@@ -31,15 +31,15 @@ export function SiteHeader() {
             <Icon name="phone" className="h-4 w-4" />
             {brand.company.phone.display}
           </a>
-          <ButtonLink href={brand.primaryCta.href} className="!px-4 !py-2 text-sm">
-            {brand.primaryCta.label}
+          <ButtonLink href={brand.headerCta.href} className="!px-4 !py-2 text-sm">
+            {brand.headerCta.label}
           </ButtonLink>
         </div>
 
         <MobileNav
           items={brand.nav}
           phone={brand.company.phone}
-          cta={brand.primaryCta}
+          cta={brand.headerCta}
         />
       </div>
     </header>

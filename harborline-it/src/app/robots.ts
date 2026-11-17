@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
   // Demo sites stay out of search results.
   if (brand.demo.enabled) return { rules: { userAgent: "*", disallow: "/" } };
   return {
-    rules: { userAgent: "*", allow: "/", disallow: ["/admin", "/api"] },
+    rules: { userAgent: "*", allow: "/", disallow: ["/admin", "/api", "/risk-check/report"] },
     sitemap: `${base}/sitemap.xml`,
   };
 }

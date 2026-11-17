@@ -1,0 +1,64 @@
+// Database schema. Local dev uses SQLite; see README for switching to Postgres
+// (change `provider` below and the adapter in src/lib/db.ts).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+/// A person who contacted us, took the Risk Check, or (Phase 3) chatted.
+/// One row per email address; their activity hangs off it.
+model Lead {
+  id           String   @id @default(uuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  name         String
+  business     String
+  email        String   @unique
+  phone        String?
+  /// First touch: "risk_check" | "contact" | "chat"
+  source       String
+  /// Pipeline stage: "new" | "contacted" | "booked" | "won" | "lost"
+  status       String   @default("new")
+  practiceType String?
+  teamSize     String?
+
+  assessments     RiskAssessment[]
+  contactRequests ContactRequest[]
+
+  @@index([createdAt])
+}
+
+/// One completed IT Risk Check. `answers` is a self-contained snapshot
+/// (question text, chosen answer, points) so old reports stay readable even
+/// if the quiz in config/brand.ts changes later.
+model RiskAssessment {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  /// 0-100
+  score     Int
+  /// Band label from config, e.g. "At risk"
+  band      String
+  answers   Json
+
+  @@index([leadId])
+  @@index([createdAt])
+}
+
+/// A message sent through the contact form.
+model ContactRequest {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  message   String
+  plan      String?
+
+  @@index([leadId])
+}

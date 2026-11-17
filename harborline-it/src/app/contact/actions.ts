@@ -1,6 +1,8 @@
 "use server";
 
 import { brand } from "@config/brand";
+import { db } from "@/lib/db";
+import { upsertLead } from "@/lib/leads";
 import { isEmail, isPhone, str, type FieldErrors } from "@/lib/validation";
 
 type Field = "name" | "practice" | "email" | "phone" | "message";
@@ -38,9 +40,27 @@ export async function submitContact(_prev: ContactState, formData: FormData): Pr
     return { status: "error", message: "Please fix the highlighted fields.", errors, values };
   }
 
-  // Phase 1: no database yet, so the submission is logged on the server.
-  // Phase 2 replaces this with a saved Lead record.
-  console.info("[contact] new inquiry", { ...values, receivedAt: new Date().toISOString() });
+  try {
+    const { lead } = await upsertLead({
+      name: values.name,
+      business: values.practice,
+      email: values.email,
+      phone: values.phone,
+      practiceType: values.practiceType,
+      teamSize: values.teamSize,
+      source: "contact",
+    });
+    await db.contactRequest.create({
+      data: { leadId: lead.id, message: values.message, plan: values.plan || null },
+    });
+  } catch (error) {
+    console.error("[contact] could not save inquiry", error);
+    return {
+      status: "error",
+      message: `Sorry, something went wrong sending your message. Please try again or call us at ${brand.company.phone.display}.`,
+      values,
+    };
+  }
 
   return { status: "success" };
 }

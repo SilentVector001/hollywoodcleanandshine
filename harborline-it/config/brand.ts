@@ -87,6 +87,36 @@ export interface TeamMember {
   initials: string;
 }
 
+export interface RiskOption {
+  /** Stable id stored with each saved answer. Don't rename once live. */
+  id: string;
+  label: string;
+  /** Points earned for this answer. The best answer earns the question's full weight. */
+  points: number;
+}
+
+export interface RiskQuestion {
+  /** Stable id stored with each saved answer. Don't rename once live. */
+  id: string;
+  /** Short label shown in reports, e.g. "Backups". */
+  category: string;
+  question: string;
+  help?: string;
+  /** Plain-English "why this matters", shown in the full report. */
+  why: string;
+  /** What good looks like / the next step, shown in the full report. */
+  recommendation: string;
+  options: RiskOption[];
+}
+
+export interface RiskBand {
+  /** Lowest score (0–100) that falls in this band. */
+  min: number;
+  label: string;
+  tone: "good" | "fair" | "warn" | "risk";
+  summary: string;
+}
+
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 export const brand = {
@@ -109,6 +139,8 @@ export const brand = {
     // CAN-SPAM requires a valid physical mailing address in marketing email.
     mailingAddress: "[Mailing address placeholder], Fort Lauderdale, FL 33301",
     foundedYear: 2016,
+    /** Used for dates on reports and emails. */
+    timeZone: "America/New_York",
     siteUrl,
   },
 
@@ -169,8 +201,11 @@ export const brand = {
     { label: "Contact", href: "/contact" },
   ] satisfies Link[],
 
-  /** The main call to action used in the header, hero and closing band. */
+  /** "Talk to us" call to action, used on pricing, About, Contact and the closing band. */
   primaryCta: { label: "Book a free 15-minute call", href: "/contact" } satisfies Link,
+
+  /** Button in the site header (desktop and mobile). Points at the lead magnet. */
+  headerCta: { label: "Free IT Risk Check", href: "/risk-check" } satisfies Link,
 
   // -------------------------------------------------------------------- hero
   hero: {
@@ -178,7 +213,8 @@ export const brand = {
     headline: "Your practice runs on technology. We keep it running.",
     subheadline:
       "Harborline IT looks after your computers, network, backups and HIPAA security safeguards, so your team can focus on patients instead of passwords.",
-    secondaryCta: { label: "See plans & pricing", href: "/#pricing" } satisfies Link,
+    primaryCta: { label: "Take the free IT Risk Check", href: "/risk-check" } satisfies Link,
+    secondaryCta: { label: "Book a free 15-minute call", href: "/contact" } satisfies Link,
     highlights: [
       "We sign your BAA",
       "Local techs in Broward, Palm Beach & Miami-Dade",
@@ -523,11 +559,230 @@ export const brand = {
           "Yes. Many practices use us alongside an in-house or part-time IT person, adding security tools, monitoring and after-hours coverage.",
       },
       {
+        question: "What is the free IT Risk Check?",
+        answer:
+          "It's a 10-question self-assessment covering backups, passwords, updates, training and HIPAA basics. It takes about 3 minutes and gives you a score out of 100 with plain-English priorities. It's educational, not a formal HIPAA Security Risk Assessment.",
+      },
+      {
         question: "Which areas do you serve?",
         answer:
           "Miami-Dade, Broward and Palm Beach counties for on-site work, and remote support anywhere in Florida.",
       },
     ] satisfies FaqItem[],
+  },
+
+  // ------------------------------------------------------------ risk check
+  /**
+   * The "IT Risk Check" lead magnet (/risk-check). Rewrite the questions for
+   * each client's niche. Score = points earned ÷ points possible × 100, so the
+   * weights can be anything; here they add up to 100 for readability.
+   */
+  riskCheck: {
+    eyebrow: "Free IT Risk Check",
+    title: "How exposed is your practice? Find out in 3 minutes.",
+    intro:
+      "Answer 10 quick questions about backups, passwords, updates and HIPAA basics. You'll get a score out of 100 and a plain-English report with your top priorities.",
+    promoTitle: "Not sure where your practice stands?",
+    promoText:
+      "Take our free 3-minute IT Risk Check. Ten multiple-choice questions, no technical knowledge needed, and a plain-English score out of 100.",
+    promoPoints: [
+      "Backups and disaster readiness",
+      "Passwords and multi-factor login",
+      "Security updates and old computers",
+      "Staff training and HIPAA basics",
+    ],
+    ctaLabel: "Start my free Risk Check",
+    timeEstimate: "About 3 minutes",
+    privacyNote: "Your answers stay private. We never sell or share your information.",
+    gate: {
+      title: "Your score is ready",
+      intro:
+        "Enter your details to unlock your full report: your top priorities, why each one matters, and what to do next.",
+      submitLabel: "Show my full report",
+      consentNote:
+        "We'll follow up by email with tips based on your answers. Unsubscribe anytime.",
+    },
+    report: {
+      ctaTitle: "Want help closing these gaps?",
+      ctaText:
+        "Book a free 15-minute call and we'll walk through your results together. No pressure, no jargon.",
+      disclaimer:
+        "This self-assessment is for educational purposes only. It is not a formal HIPAA Security Risk Assessment and is not legal advice.",
+    },
+    /** Checked from the top down; the first band whose `min` the score reaches wins. */
+    bands: [
+      {
+        min: 80,
+        label: "Well protected",
+        tone: "good",
+        summary:
+          "Your practice has strong foundations. A few tune-ups will keep it that way as your team and technology change.",
+      },
+      {
+        min: 60,
+        label: "A few gaps",
+        tone: "fair",
+        summary:
+          "You have many of the basics in place, but there are gaps that a bad day, a storm or one wrong click could expose.",
+      },
+      {
+        min: 40,
+        label: "At risk",
+        tone: "warn",
+        summary:
+          "Several important protections are missing or unproven. They're worth addressing in the next month or two.",
+      },
+      {
+        min: 0,
+        label: "High risk",
+        tone: "risk",
+        summary:
+          "Some core protections aren't in place yet. The good news: most of these are quick, affordable fixes once someone owns them.",
+      },
+    ] satisfies RiskBand[],
+    questions: [
+      {
+        id: "backups",
+        category: "Backups",
+        question: "How is your practice and patient data backed up?",
+        why: "Backups are your safety net against ransomware, failed hardware and storms. Without a recent copy stored somewhere else, one bad day can erase patient records.",
+        recommendation:
+          "Back up automatically every day to two places: a local device for fast restores and an encrypted cloud copy that ransomware and storms can't reach.",
+        options: [
+          { id: "two-places", label: "Automatically every day, to an onsite device and the cloud", points: 14 },
+          { id: "one-place", label: "Automatically, but to only one place", points: 8 },
+          { id: "manual", label: "Someone copies files manually, when they remember", points: 3 },
+          { id: "none", label: "We don't, or I'm not sure", points: 0 },
+        ],
+      },
+      {
+        id: "restore-test",
+        category: "Backup testing",
+        question: "When did you last test restoring files from a backup?",
+        help: "A test means actually getting files back, not just seeing that a backup ran.",
+        why: "Many offices find out their backups don't work only when they need them. A backup you've never restored is a guess.",
+        recommendation:
+          "Test a restore at least every quarter and keep a short note of what was restored and how long it took.",
+        options: [
+          { id: "quarter", label: "Within the last 3 months", points: 8 },
+          { id: "year", label: "Within the last year", points: 5 },
+          { id: "never", label: "Never, as far as I know", points: 0 },
+          { id: "unsure", label: "I'm not sure", points: 0 },
+        ],
+      },
+      {
+        id: "mfa",
+        category: "Multi-factor login",
+        question: "Do staff use multi-factor login for email and remote access?",
+        help: "Multi-factor login means a code or app prompt on top of the password.",
+        why: "Stolen passwords are the most common way into small-business email. Multi-factor login blocks most of these attempts, even when a password leaks.",
+        recommendation:
+          "Turn on multi-factor login for email, remote access and cloud practice software, for every staff member.",
+        options: [
+          { id: "everyone", label: "Yes, for everyone", points: 14 },
+          { id: "some", label: "For some people or some systems", points: 6 },
+          { id: "no", label: "No", points: 0 },
+          { id: "unsure", label: "I'm not sure", points: 0 },
+        ],
+      },
+      {
+        id: "passwords",
+        category: "Passwords & logins",
+        question: "How are logins and passwords handled in your office?",
+        why: "Shared logins make it impossible to know who opened which patient record, and reused passwords let one breach spread to many accounts.",
+        recommendation:
+          "Give every person their own login and use a business password manager so strong, unique passwords are easy.",
+        options: [
+          { id: "manager", label: "Everyone has their own login, managed with a password manager", points: 8 },
+          { id: "own-reused", label: "Everyone has their own login, but passwords are reused or written down", points: 4 },
+          { id: "some-shared", label: "A few logins are shared between staff", points: 2 },
+          { id: "shared", label: "Shared logins are common (for example, one front-desk password)", points: 0 },
+        ],
+      },
+      {
+        id: "patching",
+        category: "Security updates",
+        question: "How do security updates get installed on your computers?",
+        why: "Most successful attacks use weaknesses that already had a fix available. Updates that quietly fail leave the door open.",
+        recommendation:
+          "Automate security updates and have someone confirm every month that each device actually installed them.",
+        options: [
+          { id: "auto-checked", label: "Automatically, and someone checks they worked", points: 10 },
+          { id: "auto", label: "Automatically, but nobody checks", points: 6 },
+          { id: "manual", label: "When someone gets around to it", points: 2 },
+          { id: "unsure", label: "I'm not sure", points: 0 },
+        ],
+      },
+      {
+        id: "outdated",
+        category: "Outdated computers",
+        question: "Are any computers running an operating system that no longer gets security updates?",
+        help: "This often includes an older PC kept around for imaging or a specialty device.",
+        why: "Computers that no longer get security updates can't be fixed when new weaknesses appear, and they put the rest of your network at risk.",
+        recommendation:
+          "Replace unsupported computers. If specialty equipment needs one, keep it off the internet and on its own separate network.",
+        options: [
+          { id: "none", label: "No, every computer is supported", points: 8 },
+          { id: "one-two", label: "One or two", points: 3 },
+          { id: "several", label: "Several", points: 0 },
+          { id: "unsure", label: "I'm not sure", points: 0 },
+        ],
+      },
+      {
+        id: "training",
+        category: "Phishing training",
+        question: "How often does your team get security or phishing training?",
+        why: "Most breaches start with a convincing email. Your team is your first line of defense, and short, regular training makes a real difference.",
+        recommendation:
+          "Provide short training at least once a year and run practice phishing emails so staff can learn safely.",
+        options: [
+          { id: "regular", label: "At least yearly, with practice phishing tests", points: 10 },
+          { id: "occasional", label: "Once when hired, or occasionally", points: 4 },
+          { id: "never", label: "Never", points: 0 },
+        ],
+      },
+      {
+        id: "sra",
+        category: "HIPAA risk assessment",
+        question: "When did your practice last complete a HIPAA Security Risk Assessment?",
+        why: "HIPAA requires a regular Security Risk Assessment. It's also one of the first documents requested after a breach or complaint.",
+        recommendation:
+          "Complete and document a Security Risk Assessment every year, and whenever your systems change significantly.",
+        options: [
+          { id: "recent", label: "Within the last 12 months, and it's documented", points: 10 },
+          { id: "older", label: "1 to 3 years ago", points: 5 },
+          { id: "never", label: "More than 3 years ago, or never", points: 0 },
+          { id: "unsure", label: "I'm not sure", points: 0 },
+        ],
+      },
+      {
+        id: "devices",
+        category: "Device protection",
+        question: "Are your laptops and workstations encrypted and protected by monitored security software?",
+        why: "A lost or stolen laptop with unencrypted patient data can become a reportable breach. Encryption plus monitored security software is a much safer position.",
+        recommendation:
+          "Encrypt every laptop and workstation, and use security software that's centrally monitored so problems get noticed quickly.",
+        options: [
+          { id: "full", label: "Yes, encrypted and centrally monitored", points: 10 },
+          { id: "partial", label: "We have antivirus, but it isn't monitored or devices aren't encrypted", points: 5 },
+          { id: "none", label: "No, or I'm not sure", points: 0 },
+        ],
+      },
+      {
+        id: "disaster-plan",
+        category: "Hurricane & outage plan",
+        question:
+          "If your office lost power or flooded for a week, do you have a written plan to keep serving patients?",
+        why: "Hurricanes, floods and long outages happen in South Florida. A written plan turns a stressful week into a checklist.",
+        recommendation:
+          "Write a one-page plan: how phones forward, how staff work remotely and the order systems come back. Review it before each hurricane season.",
+        options: [
+          { id: "written", label: "Yes, it's written down and we've reviewed it recently", points: 8 },
+          { id: "informal", label: "We have a rough idea, but nothing written", points: 3 },
+          { id: "no", label: "No", points: 0 },
+        ],
+      },
+    ] satisfies RiskQuestion[],
   },
 
   // ----------------------------------------------------------------- cta band
