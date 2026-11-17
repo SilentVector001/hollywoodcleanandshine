@@ -51,9 +51,15 @@ export function ChatWidget(props: ChatWidgetProps) {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ sessionId, messages, booked }));
   }, [sessionId, messages, booked]);
 
-  // Scroll to the newest message.
+  // Scroll to the newest message. When the booking form opens, keep the
+  // assistant's answer in view (form below it) instead of jumping past it.
   useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+    const list = listRef.current;
+    if (!list) return;
+    const bubbles = list.querySelectorAll<HTMLElement>("[data-bubble]");
+    const last = bubbles[bubbles.length - 1];
+    const top = bookingOpen && !pending && last ? last.offsetTop - 12 : list.scrollHeight;
+    list.scrollTo({ top, behavior: "smooth" });
   }, [messages, pending, bookingOpen]);
 
   useEffect(() => {
@@ -161,7 +167,7 @@ export function ChatWidget(props: ChatWidgetProps) {
             </p>
           ) : null}
 
-          <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4" aria-live="polite">
+          <div ref={listRef} className="relative flex-1 space-y-3 overflow-y-auto px-4 py-4" aria-live="polite">
             <Bubble role="assistant">{greeting}</Bubble>
             {messages.map((m) => (
               <Bubble key={m.id} role={m.role}>
@@ -283,7 +289,7 @@ export function ChatWidget(props: ChatWidgetProps) {
 function Bubble({ role, children }: { role: Role; children: React.ReactNode }) {
   const mine = role === "user";
   return (
-    <div className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+    <div data-bubble className={`flex ${mine ? "justify-end" : "justify-start"}`}>
       <p
         className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[15px] leading-relaxed whitespace-pre-line ${
           mine ? "rounded-br-md bg-brand text-white" : "rounded-bl-md bg-slate-100 text-slate-800"
